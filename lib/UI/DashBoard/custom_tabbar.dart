@@ -9,6 +9,8 @@ import 'package:simple/Bloc/StockIn/stock_in_bloc.dart';
 import 'package:simple/Bloc/demo/demo_bloc.dart';
 import 'package:simple/Bloc/Products/product_category_bloc.dart';
 import 'package:simple/ModelClass/Order/Get_view_order_model.dart';
+import 'package:simple/Reusable/color.dart';
+import 'package:simple/UI/Category/category_list.dart';
 import 'package:simple/UI/CustomAppBar/custom_appbar.dart';
 import 'package:simple/UI/Expenses/expense_page.dart';
 import 'package:simple/UI/Home_screen/home_screen.dart';
@@ -72,6 +74,8 @@ class _DashBoardState extends State<DashBoard> {
       GlobalKey<ExpenseViewViewState>();
   final GlobalKey<ShiftViewViewState> shiftKey =
       GlobalKey<ShiftViewViewState>();
+  final GlobalKey<CategoryListViewState> catKey =
+      GlobalKey<CategoryListViewState>();
   int selectedIndex = 0;
   bool orderLoad = false;
   bool hasRefreshedOrder = false;
@@ -80,6 +84,7 @@ class _DashBoardState extends State<DashBoard> {
   bool hasRefreshedProduct = false;
   bool hasRefreshedExpense = false;
   bool hasRefreshedShift = false;
+  bool hasRefreshedCategory = false;
 
   @override
   void initState() {
@@ -159,6 +164,278 @@ class _DashBoardState extends State<DashBoard> {
     }
   }
 
+  void _refreshCategory() {
+    final catKeyState = catKey.currentState;
+    if (catKeyState != null) {
+      catKeyState.refreshShift();
+    } else {
+      debugPrint("reportKeyState is NULL — check if key is assigned properly");
+    }
+  }
+
+  Widget buildDrawerItem({
+    required IconData icon,
+    required String label,
+    required int index,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isSelected ? appPrimaryColor : greyColor,
+        size: 24,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? appPrimaryColor : greyColor,
+        ),
+      ),
+      selected: isSelected,
+      selectedTileColor: appPrimaryColor.withOpacity(0.1),
+      onTap: onTap,
+    );
+  }
+
+  // In your _DashBoardState class, replace the buildDrawer() method with this:
+
+  Drawer buildDrawer() {
+    return Drawer(
+      child: Column(
+        children: [
+          SizedBox(height: 16),
+          // Navigation Items
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                buildDrawerItem(
+                  icon: Icons.home_outlined,
+                  label: "Home",
+                  index: 0,
+                  isSelected:
+                      selectedIndex == 0, // Use selectedIndex state variable
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = 0;
+                    });
+                    Navigator.pop(context);
+
+                    // Trigger refresh logic
+                    hasRefreshedOrder = true;
+                    hasRefreshedReport = false;
+                    hasRefreshedStock = false;
+                    hasRefreshedProduct = false;
+                    hasRefreshedExpense = false;
+                    hasRefreshedShift = false;
+                    hasRefreshedCategory = false;
+                    WidgetsBinding.instance
+                        .addPostFrameCallback((_) => _refreshHome());
+                  },
+                ),
+                buildDrawerItem(
+                  icon: Icons.shopping_cart_outlined,
+                  label: "Orders",
+                  index: 1,
+                  isSelected: selectedIndex == 1,
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = 1;
+                    });
+                    Navigator.pop(context);
+
+                    hasRefreshedOrder = false;
+                    hasRefreshedReport = false;
+                    hasRefreshedStock = false;
+                    hasRefreshedProduct = false;
+                    hasRefreshedExpense = false;
+                    hasRefreshedShift = false;
+                    hasRefreshedCategory = false;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _refreshOrders();
+                      _resetOrderTab();
+                    });
+                  },
+                ),
+                buildDrawerItem(
+                  icon: Icons.note_alt_outlined,
+                  label: "Report",
+                  index: 2,
+                  isSelected: selectedIndex == 2,
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = 2;
+                    });
+                    Navigator.pop(context);
+
+                    if (!hasRefreshedReport) {
+                      hasRefreshedOrder = false;
+                      hasRefreshedReport = true;
+                      hasRefreshedStock = false;
+                      hasRefreshedProduct = false;
+                      hasRefreshedExpense = false;
+                      hasRefreshedShift = false;
+                      hasRefreshedCategory = false;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _refreshReport();
+                      });
+                    }
+                  },
+                ),
+                buildDrawerItem(
+                  icon: Icons.inventory,
+                  label: "Stockin",
+                  index: 3,
+                  isSelected: selectedIndex == 3,
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = 3;
+                    });
+                    Navigator.pop(context);
+
+                    if (!hasRefreshedStock) {
+                      hasRefreshedOrder = false;
+                      hasRefreshedReport = false;
+                      hasRefreshedStock = true;
+                      hasRefreshedProduct = false;
+                      hasRefreshedExpense = false;
+                      hasRefreshedShift = false;
+                      hasRefreshedCategory = false;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _refreshStock();
+                      });
+                    }
+                  },
+                ),
+                buildDrawerItem(
+                  icon: Icons.shopping_bag_outlined,
+                  label: "Products",
+                  index: 4,
+                  isSelected: selectedIndex == 4,
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = 4;
+                    });
+                    Navigator.pop(context);
+
+                    if (!hasRefreshedProduct) {
+                      hasRefreshedOrder = false;
+                      hasRefreshedReport = false;
+                      hasRefreshedStock = false;
+                      hasRefreshedExpense = false;
+                      hasRefreshedProduct = true;
+                      hasRefreshedShift = false;
+                      hasRefreshedCategory = false;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _refreshProduct();
+                      });
+                    }
+                  },
+                ),
+                buildDrawerItem(
+                  icon: Icons.pie_chart_outline,
+                  label: "Expense",
+                  index: 5,
+                  isSelected: selectedIndex == 5,
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = 5;
+                    });
+                    Navigator.pop(context);
+
+                    if (!hasRefreshedExpense) {
+                      hasRefreshedOrder = false;
+                      hasRefreshedReport = false;
+                      hasRefreshedStock = false;
+                      hasRefreshedProduct = false;
+                      hasRefreshedExpense = true;
+                      hasRefreshedShift = false;
+                      hasRefreshedCategory = false;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _refreshExpense();
+                      });
+                    }
+                  },
+                ),
+                buildDrawerItem(
+                  icon: Icons.south_east,
+                  label: "ShiftClose",
+                  index: 6,
+                  isSelected: selectedIndex == 6,
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = 6;
+                    });
+                    Navigator.pop(context);
+
+                    if (!hasRefreshedShift) {
+                      hasRefreshedOrder = false;
+                      hasRefreshedReport = false;
+                      hasRefreshedStock = false;
+                      hasRefreshedProduct = false;
+                      hasRefreshedExpense = false;
+                      hasRefreshedShift = true;
+                      hasRefreshedCategory = false;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _refreshShift();
+                      });
+                    }
+                  },
+                ),
+                buildDrawerItem(
+                  icon: Icons.folder_shared,
+                  label: "Categories",
+                  index: 7,
+                  isSelected: selectedIndex == 7,
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = 7;
+                    });
+                    Navigator.pop(context);
+
+                    if (!hasRefreshedCategory) {
+                      hasRefreshedOrder = false;
+                      hasRefreshedReport = false;
+                      hasRefreshedStock = false;
+                      hasRefreshedProduct = false;
+                      hasRefreshedExpense = false;
+                      hasRefreshedShift = false;
+                      hasRefreshedCategory = true;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _refreshCategory();
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          // Logout at bottom
+          Divider(height: 1),
+          ListTile(
+            leading: Icon(Icons.logout, color: Colors.red),
+            title: Text(
+              "Logout",
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              showLogoutDialog(context);
+            },
+          ),
+          SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
   Widget mainContainer() {
     return SafeArea(
       child: Scaffold(
@@ -176,6 +453,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedProduct = false;
               hasRefreshedExpense = false;
               hasRefreshedShift = false;
+              hasRefreshedCategory = false;
               WidgetsBinding.instance
                   .addPostFrameCallback((_) => _refreshHome());
             }
@@ -186,6 +464,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedProduct = false;
               hasRefreshedExpense = false;
               hasRefreshedShift = false;
+              hasRefreshedCategory = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshOrders();
                 _resetOrderTab();
@@ -198,6 +477,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedProduct = false;
               hasRefreshedExpense = false;
               hasRefreshedShift = false;
+              hasRefreshedCategory = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshReport();
               });
@@ -209,6 +489,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedProduct = false;
               hasRefreshedExpense = false;
               hasRefreshedShift = false;
+              hasRefreshedCategory = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshStock();
               });
@@ -220,6 +501,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedExpense = false;
               hasRefreshedProduct = true;
               hasRefreshedShift = false;
+              hasRefreshedCategory = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshProduct();
               });
@@ -231,6 +513,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedProduct = false;
               hasRefreshedExpense = true;
               hasRefreshedShift = false;
+              hasRefreshedCategory = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshExpense();
               });
@@ -242,6 +525,19 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedProduct = false;
               hasRefreshedExpense = false;
               hasRefreshedShift = true;
+              hasRefreshedCategory = false;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _refreshShift();
+              });
+            }
+            if (index == 7 && !hasRefreshedCategory) {
+              hasRefreshedOrder = false;
+              hasRefreshedReport = false;
+              hasRefreshedStock = false;
+              hasRefreshedProduct = false;
+              hasRefreshedExpense = false;
+              hasRefreshedShift = false;
+              hasRefreshedCategory = true;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshShift();
               });
@@ -251,6 +547,7 @@ class _DashBoardState extends State<DashBoard> {
             showLogoutDialog(context);
           },
         ),
+        drawer: buildDrawer(),
         body: IndexedStack(
           index: selectedIndex,
           children: [
@@ -345,6 +642,20 @@ class _DashBoardState extends State<DashBoard> {
                     child: ShiftView(
                       key: shiftKey,
                       hasRefreshedShift: hasRefreshedShift,
+                    ),
+                  ),
+            hasRefreshedCategory == true
+                ? BlocProvider(
+                    create: (_) => ShiftClosingBloc(),
+                    child: CategoryListView(
+                      key: catKey,
+                      hasRefreshedCategory: hasRefreshedCategory,
+                    ))
+                : BlocProvider(
+                    create: (_) => ShiftClosingBloc(),
+                    child: CategoryList(
+                      key: catKey,
+                      hasRefreshedCategory: hasRefreshedCategory,
                     ),
                   ),
           ],

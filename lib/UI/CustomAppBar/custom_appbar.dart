@@ -71,23 +71,29 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-
     Widget mainContainer() {
       return AppBar(
         backgroundColor: whiteColor,
         elevation: 0,
         automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (BuildContext context) {
+            return IconButton(
+              icon: Icon(Icons.menu, color: appPrimaryColor),
+              onPressed: () {
+                Scaffold.of(context).openDrawer(); // Opens the drawer
+              },
+              tooltip: 'Menu',
+            );
+          },
+        ),
         title: LayoutBuilder(
           builder: (context, constraints) {
-            // Determine if we need compact mode based on available width
             final isCompactMode = constraints.maxWidth < 600;
-            debugPrint("layoutidth:$isCompactMode");
             return Row(
               children: [
-                // Store/Restaurant Name
                 if (getStockMaintanencesModel.data?.name != null)
                   Flexible(
-                    flex: 3,
                     child: Text(
                       getStockMaintanencesModel.data!.name.toString(),
                       style: TextStyle(
@@ -100,85 +106,6 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                   )
                 else
                   const SizedBox.shrink(),
-
-                const SizedBox(width: 30),
-
-                // Navigation Tabs
-                Expanded(
-                  flex: isCompactMode ? 5 : 15,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        _buildNavButton(
-                          icon: Icons.home_outlined,
-                          label: "Home",
-                          index: 0,
-                          isSelected: widget.selectedIndex == 0,
-                          onPressed: () => widget.onTabSelected(0),
-                          isCompact: isCompactMode,
-                        ),
-                        SizedBox(width: isCompactMode ? 8 : 16),
-                        _buildNavButton(
-                          icon: Icons.shopping_cart_outlined,
-                          label: "Orders",
-                          index: 1,
-                          isSelected: widget.selectedIndex == 1,
-                          onPressed: () => widget.onTabSelected(1),
-                          isCompact: isCompactMode,
-                        ),
-                        SizedBox(width: isCompactMode ? 8 : 16),
-                        _buildNavButton(
-                          icon: Icons.note_alt_outlined,
-                          label: "Report",
-                          index: 2,
-                          isSelected: widget.selectedIndex == 2,
-                          onPressed: () => widget.onTabSelected(2),
-                          isCompact: isCompactMode,
-                        ),
-                        SizedBox(width: isCompactMode ? 8 : 16),
-                        if (getStockMaintanencesModel.data?.stockMaintenance ==
-                            true) ...[
-                          _buildNavButton(
-                            icon: Icons.inventory,
-                            label: "Stockin",
-                            index: 3,
-                            isSelected: widget.selectedIndex == 3,
-                            onPressed: () => widget.onTabSelected(3),
-                            isCompact: isCompactMode,
-                          ),
-                          SizedBox(width: isCompactMode ? 8 : 16),
-                        ],
-                        _buildNavButton(
-                          icon: Icons.shopping_bag_outlined,
-                          label: "Products",
-                          index: 4,
-                          isSelected: widget.selectedIndex == 4,
-                          onPressed: () => widget.onTabSelected(4),
-                          isCompact: isCompactMode,
-                        ),
-                        SizedBox(width: isCompactMode ? 8 : 16),
-                        _buildNavButton(
-                          icon: Icons.pie_chart_outline,
-                          label: "Expense",
-                          index: 5,
-                          isSelected: widget.selectedIndex == 5,
-                          onPressed: () => widget.onTabSelected(5),
-                          isCompact: isCompactMode,
-                        ),
-                        _buildNavButton(
-                          icon: Icons.south_east,
-                          label: "ShiftClose",
-                          index: 6,
-                          isSelected: widget.selectedIndex == 6,
-                          onPressed: () => widget.onTabSelected(6),
-                          isCompact: isCompactMode,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ],
             );
           },
@@ -221,37 +148,6 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
       builder: (context, dynamic) {
         return mainContainer();
       },
-    );
-  }
-
-  Widget _buildNavButton({
-    required IconData icon,
-    required String label,
-    required int index,
-    required bool isSelected,
-    required VoidCallback onPressed,
-    required bool isCompact,
-  }) {
-    return TextButton.icon(
-      onPressed: onPressed,
-      icon: Icon(
-        icon,
-        size: 24,
-        color: isSelected ? appPrimaryColor : greyColor,
-      ),
-      label: Text(
-        label,
-        style: MyTextStyle.f16(
-          weight: FontWeight.bold,
-          isSelected ? appPrimaryColor : greyColor,
-        ).copyWith(fontSize: 15),
-      ),
-      style: TextButton.styleFrom(
-        padding: EdgeInsets.symmetric(
-          horizontal: isCompact ? 4 : 6,
-          vertical: 8,
-        ),
-      ),
     );
   }
 
