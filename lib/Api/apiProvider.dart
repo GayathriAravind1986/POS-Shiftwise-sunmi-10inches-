@@ -1329,40 +1329,36 @@ class ApiProvider {
     debugPrint("token:$token");
     try {
       FormData formData;
-
+      Map<String, dynamic> fields = {
+        "name": name,
+        "isDefault": isDefault.toString(),
+        "locationId": locId,
+      };
       if (kIsWeb) {
-        // WEB
-        final fileName = pickedImageName ?? "image.png";
+        if (imageBytes != null) {
+          final fileName =
+              pickedImageName.isNotEmpty ? pickedImageName : "image.png";
 
-        MultipartFile multipartFile = MultipartFile.fromBytes(
-          imageBytes!,
-          filename: fileName,
-          contentType: getMediaType(fileName),
-        );
-
-        formData = FormData.fromMap({
-          "name": name,
-          "isDefault": isDefault.toString(),
-          "locationId": locId,
-          "image": multipartFile,
-        });
+          fields["image"] = MultipartFile.fromBytes(
+            imageBytes,
+            filename: fileName,
+            contentType: getMediaType(fileName),
+          );
+        }
       } else {
-        // ANDROID / SUNMI — use File
-        final fileName = pickedImageName ?? imageFile!.path.split('/').last;
+        if (imageFile != null) {
+          final fileName = pickedImageName.isNotEmpty
+              ? pickedImageName
+              : imageFile.path.split('/').last;
 
-        MultipartFile multipartFile = await MultipartFile.fromFile(
-          imageFile!.path,
-          filename: fileName,
-        );
-
-        formData = FormData.fromMap({
-          "name": name,
-          "isDefault": isDefault.toString(),
-          "locationId": locId,
-          "image": multipartFile,
-        });
+          fields["image"] = await MultipartFile.fromFile(
+            imageFile.path,
+            filename: fileName,
+          );
+        }
       }
 
+      formData = FormData.fromMap(fields);
       var dio = Dio();
 
       var response = await dio.post(
