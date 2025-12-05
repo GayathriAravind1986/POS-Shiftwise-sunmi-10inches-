@@ -66,7 +66,7 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
   String? selectedPayment;
   String? selectedPaymentFilter;
   String? locationId;
-  List<String> categories = ["Pongal", "Festival", "Food", "Travel"];
+
   String mapPaymentForApi(String? payment) {
     switch (payment) {
       case "Cash":

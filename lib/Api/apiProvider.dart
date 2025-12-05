@@ -1,11 +1,17 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Bloc/Response/errorResponse.dart';
+import 'package:simple/ModelClass/AddCategory/deleteCategoryModel.dart';
 import 'package:simple/ModelClass/Authentication/Post_login_model.dart';
 import 'package:simple/ModelClass/Authentication/postShiftModel.dart';
 import 'package:simple/ModelClass/Cart/Post_Add_to_billing_model.dart';
+import 'package:simple/ModelClass/AddCategory/PostCategoryModel.dart';
+import 'package:simple/ModelClass/AddCategory/addCategoryListModel.dart';
+import 'package:simple/ModelClass/AddCategory/getSingleCategoryModel.dart';
+import 'package:simple/ModelClass/AddCategory/putCategoryModel.dart';
 import 'package:simple/ModelClass/Expense/getCategoryByLocationModel.dart';
 import 'package:simple/ModelClass/Expense/getDailyExpenseModel.dart';
 import 'package:simple/ModelClass/Expense/getSingleExpenseModel.dart';
@@ -30,6 +36,7 @@ import 'package:simple/ModelClass/StockIn/saveStockInModel.dart';
 import 'package:simple/ModelClass/User/getUserModel.dart';
 import 'package:simple/ModelClass/Waiter/getWaiterModel.dart';
 import 'package:simple/Reusable/constant.dart';
+import 'package:simple/Reusable/image_helper.dart';
 
 import '../ModelClass/Table/Get_table_model.dart';
 
@@ -1309,6 +1316,298 @@ class ApiProvider {
       return PostDailyClosingModel()..errorResponse = errorResponse;
     } catch (error) {
       return PostDailyClosingModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// ADD Category
+  /// Save Category - API Integration
+  Future<PostCategoryModel> postCategoryAPI(
+      String name, bool isDefault, String locId, String pickedImageName,
+      {File? imageFile, Uint8List? imageBytes}) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+    try {
+      FormData formData;
+
+      if (kIsWeb) {
+        // WEB
+        final fileName = pickedImageName ?? "image.png";
+
+        MultipartFile multipartFile = MultipartFile.fromBytes(
+          imageBytes!,
+          filename: fileName,
+          contentType: getMediaType(fileName),
+        );
+
+        formData = FormData.fromMap({
+          "name": name,
+          "isDefault": isDefault.toString(),
+          "locationId": locId,
+          "image": multipartFile,
+        });
+      } else {
+        // ANDROID / SUNMI — use File
+        final fileName = pickedImageName ?? imageFile!.path.split('/').last;
+
+        MultipartFile multipartFile = await MultipartFile.fromFile(
+          imageFile!.path,
+          filename: fileName,
+        );
+
+        formData = FormData.fromMap({
+          "name": name,
+          "isDefault": isDefault.toString(),
+          "locationId": locId,
+          "image": multipartFile,
+        });
+      }
+
+      var dio = Dio();
+
+      var response = await dio.post(
+        '${Constants.baseUrl}api/categories',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+      if (response.statusCode == 201 && response.data != null) {
+        try {
+          PostCategoryModel postCategoryResponse =
+              PostCategoryModel.fromJson(response.data);
+          return postCategoryResponse;
+        } catch (e) {
+          return PostCategoryModel()
+            ..errorResponse = ErrorResponse(
+              message: "Failed to parse response: $e",
+            );
+        }
+      } else {
+        return PostCategoryModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return PostCategoryModel()..errorResponse = errorResponse;
+    } catch (error) {
+      return PostCategoryModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Single Category - API Integration
+  Future<GetSingleCategoryModel> getSingleCategoryAPI(String? catId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/categories/$catId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetSingleCategoryModel getSingleCategoryResponse =
+              GetSingleCategoryModel.fromJson(response.data);
+          return getSingleCategoryResponse;
+        }
+      } else {
+        return GetSingleCategoryModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetSingleCategoryModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetSingleCategoryModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetSingleCategoryModel()..errorResponse = errorResponse;
+    }
+  }
+
+  /// update Category  - API Integration
+  Future<PutCategoryModel> putCategoryAPI(
+    String catId,
+    String name,
+    bool isDefault,
+    String locId,
+    String pickedImageName, {
+    File? imageFile,
+    Uint8List? imageBytes,
+  }) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+
+    try {
+      FormData formData;
+      Map<String, dynamic> fields = {
+        "name": name,
+        "isDefault": isDefault.toString(),
+        "locationId": locId,
+      };
+      if (kIsWeb) {
+        if (imageBytes != null) {
+          final fileName =
+              pickedImageName.isNotEmpty ? pickedImageName : "image.png";
+
+          fields["image"] = MultipartFile.fromBytes(
+            imageBytes,
+            filename: fileName,
+            contentType: getMediaType(fileName),
+          );
+        }
+      } else {
+        if (imageFile != null) {
+          final fileName = pickedImageName.isNotEmpty
+              ? pickedImageName
+              : imageFile.path.split('/').last;
+
+          fields["image"] = await MultipartFile.fromFile(
+            imageFile.path,
+            filename: fileName,
+          );
+        }
+      }
+
+      formData = FormData.fromMap(fields);
+      var dio = Dio();
+      var response = await dio.put(
+        '${Constants.baseUrl}api/categories/$catId',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        return PutCategoryModel.fromJson(response.data);
+      } else {
+        return PutCategoryModel()
+          ..errorResponse = ErrorResponse(
+            message: response.data['message'] ?? 'Unknown error',
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      return PutCategoryModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      return PutCategoryModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Delete Category - API Integration
+  Future<DeleteCategoryModel> deleteCategoryAPI(String? catId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+    debugPrint("BaseUrl:${Constants.baseUrl}api/categories/$catId");
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/categories/$catId',
+        options: Options(
+          method: 'DELETE',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          DeleteCategoryModel deleteCategoryResponse =
+              DeleteCategoryModel.fromJson(response.data);
+          return deleteCategoryResponse;
+        }
+      } else {
+        return DeleteCategoryModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return DeleteCategoryModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return DeleteCategoryModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return DeleteCategoryModel()..errorResponse = errorResponse;
+    }
+  }
+
+  /// AddCategoryList API Integration
+  Future<AddCategoryListModel> getAddCategoryListAPI(String search,
+      String locId, bool? isDefault, int offset, int limit) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+    debugPrint(
+        "BaseUrl:${Constants.baseUrl}api/categories?locationId=$locId&search=$search&limit=$limit&offset=$offset&isDefault=$isDefault");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/categories?locationId=$locId&search=$search&limit=$limit&offset=$offset&isDefault=$isDefault',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          AddCategoryListModel getAddCategoryListResponse =
+              AddCategoryListModel.fromJson(response.data);
+          return getAddCategoryListResponse;
+        }
+      } else {
+        return AddCategoryListModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return AddCategoryListModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return AddCategoryListModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return AddCategoryListModel()..errorResponse = errorResponse;
     }
   }
 

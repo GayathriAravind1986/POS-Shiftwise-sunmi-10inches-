@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:simple/Alertbox/AlertDialogBox.dart';
+import 'package:simple/Bloc/AddCategory/add_edit_category_bloc.dart';
 import 'package:simple/Bloc/Category/category_bloc.dart';
 import 'package:simple/Bloc/Expense/expense_bloc.dart';
 import 'package:simple/Bloc/Report/report_bloc.dart';
@@ -10,7 +11,7 @@ import 'package:simple/Bloc/demo/demo_bloc.dart';
 import 'package:simple/Bloc/Products/product_category_bloc.dart';
 import 'package:simple/ModelClass/Order/Get_view_order_model.dart';
 import 'package:simple/Reusable/color.dart';
-import 'package:simple/UI/Category/category_list.dart';
+import 'package:simple/UI/AddCategory/category_list.dart';
 import 'package:simple/UI/CustomAppBar/custom_appbar.dart';
 import 'package:simple/UI/Expenses/expense_page.dart';
 import 'package:simple/UI/Home_screen/home_screen.dart';
@@ -167,7 +168,7 @@ class _DashBoardState extends State<DashBoard> {
   void _refreshCategory() {
     final catKeyState = catKey.currentState;
     if (catKeyState != null) {
-      catKeyState.refreshShift();
+      catKeyState.refreshCategory();
     } else {
       debugPrint("reportKeyState is NULL — check if key is assigned properly");
     }
@@ -646,13 +647,13 @@ class _DashBoardState extends State<DashBoard> {
                   ),
             hasRefreshedCategory == true
                 ? BlocProvider(
-                    create: (_) => ShiftClosingBloc(),
+                    create: (_) => CategoryBloc(),
                     child: CategoryListView(
                       key: catKey,
                       hasRefreshedCategory: hasRefreshedCategory,
                     ))
                 : BlocProvider(
-                    create: (_) => ShiftClosingBloc(),
+                    create: (_) => CategoryBloc(),
                     child: CategoryList(
                       key: catKey,
                       hasRefreshedCategory: hasRefreshedCategory,
