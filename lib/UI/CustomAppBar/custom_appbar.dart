@@ -5,7 +5,6 @@ import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/Category/category_bloc.dart';
 import 'package:simple/ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 import 'package:simple/Reusable/color.dart';
-import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {

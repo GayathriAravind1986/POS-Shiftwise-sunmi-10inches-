@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/AddProduct/add_edit_product_bloc.dart';
-import 'package:simple/ModelClass/AddCategory/putCategoryModel.dart';
 import 'package:simple/ModelClass/AddProduct/DeleteProductsModel.dart';
 import 'package:simple/ModelClass/AddProduct/getAddProductListModel.dart';
 import 'package:simple/ModelClass/AddProduct/getCategoryForAddProductModel.dart';

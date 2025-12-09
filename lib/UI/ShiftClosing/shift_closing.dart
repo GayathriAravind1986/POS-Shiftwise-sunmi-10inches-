@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -13,7 +12,6 @@ import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/space.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
-import 'package:simple/UI/Order/Helper/time_formatter.dart';
 import 'package:simple/UI/ShiftClosing/popup_shift_closing.dart';
 
 class ShiftView extends StatelessWidget {

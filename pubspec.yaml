@@ -49,9 +49,10 @@ dependencies:
   esc_pos_utils_plus: ^2.0.1+6
   flutter_esc_pos_network: ^1.0.3
   image: ^4.0.17
-  device_info_plus:
   image_picker: ^1.1.0
   image_picker_for_web: ^3.0.2
+  sunmi_printer_plus: ^4.1.1
+  device_info_plus: ^10.1.0
 
 
 dev_dependencies:

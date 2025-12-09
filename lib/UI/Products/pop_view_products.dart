@@ -1,13 +1,8 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:simple/ModelClass/Products/get_products_cat_model.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/space.dart';
-import 'package:simple/UI/Home_screen/Widget/another_imin_printer/imin_abstract.dart';
-import 'package:simple/UI/Home_screen/Widget/another_imin_printer/mock_imin_printer_chrome.dart';
-import 'package:simple/UI/Home_screen/Widget/another_imin_printer/real_device_printer.dart';
 import 'package:simple/UI/IminHelper/product_helper.dart';
 
 class ThermalProductsReceiptDialog extends StatefulWidget {
@@ -24,19 +19,11 @@ class ThermalProductsReceiptDialog extends StatefulWidget {
 
 class _ThermalProductsReceiptDialogState
     extends State<ThermalProductsReceiptDialog> {
-  late IPrinterService printerService;
   final GlobalKey productKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) {
-      printerService = MockPrinterService();
-    } else if (Platform.isAndroid) {
-      printerService = RealPrinterService();
-    } else {
-      printerService = MockPrinterService();
-    }
   }
 
   @override
@@ -137,25 +124,25 @@ class _ThermalProductsReceiptDialogState
                 children: [
                   ElevatedButton.icon(
                     onPressed: () async {
-                      try {
-                        await Future.delayed(const Duration(milliseconds: 300));
-                        await WidgetsBinding.instance.endOfFrame;
-                        Uint8List? imageBytes =
-                            await captureMonochromeProducts(productKey);
-
-                        if (imageBytes != null) {
-                          await printerService.init();
-                          await printerService.printBitmap(imageBytes);
-                          // await Future.delayed(
-                          //     const Duration(seconds: 2));
-                          await printerService.fullCut();
-                          Navigator.pop(context);
-                        }
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Print failed: $e")),
-                        );
-                      }
+                      // try {
+                      //   await Future.delayed(const Duration(milliseconds: 300));
+                      //   await WidgetsBinding.instance.endOfFrame;
+                      //   Uint8List? imageBytes =
+                      //       await captureMonochromeProducts(productKey);
+                      //
+                      //   if (imageBytes != null) {
+                      //     await printerService.init();
+                      //     await printerService.printBitmap(imageBytes);
+                      //     // await Future.delayed(
+                      //     //     const Duration(seconds: 2));
+                      //     await printerService.fullCut();
+                      //     Navigator.pop(context);
+                      //   }
+                      // } catch (e) {
+                      //   ScaffoldMessenger.of(context).showSnackBar(
+                      //     SnackBar(content: Text("Print failed: $e")),
+                      //   );
+                      // }
                     },
                     icon: const Icon(Icons.print),
                     label: const Text("Print"),

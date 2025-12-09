@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,9 +21,6 @@ import 'package:simple/Reusable/space.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
 import 'package:simple/UI/Cart/Widget/payment_option.dart';
-import 'package:simple/UI/Home_screen/Widget/another_imin_printer/imin_abstract.dart';
-import 'package:simple/UI/Home_screen/Widget/another_imin_printer/mock_imin_printer_chrome.dart';
-import 'package:simple/UI/Home_screen/Widget/another_imin_printer/real_device_printer.dart';
 import 'package:simple/UI/IminHelper/printer_helper.dart';
 import 'package:simple/UI/Order/Helper/order_helper_waitlist.dart';
 import 'package:simple/UI/Order/Helper/time_formatter.dart';
@@ -31,6 +29,7 @@ import 'package:flutter_esc_pos_network/flutter_esc_pos_network.dart';
 import 'package:image/image.dart' as img;
 import 'package:simple/UI/KOT_printer_helper/printer_kot_helper.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:sunmi_printer_plus/sunmi_printer_plus.dart';
 
 class OrderView extends StatelessWidget {
   final GlobalKey<OrderViewViewState>? orderAllKey;
@@ -116,10 +115,10 @@ class OrderViewViewState extends State<OrderViewView> {
   String? fromDate;
   String? type;
   String selectedFullPaymentMethod = "";
-  late IPrinterService printerService;
   GlobalKey normalReceiptKey = GlobalKey();
   GlobalKey kotReceiptKey = GlobalKey();
-
+  late SunmiPrinter sunmiPrinter;
+  bool _isSunmiDevice = false;
   void refreshOrders() {
     if (!mounted || !context.mounted) return;
     context.read<OrderTodayBloc>().add(
@@ -150,15 +149,6 @@ class OrderViewViewState extends State<OrderViewView> {
       }
     }
     return DateFormat('dd/MM/yyyy hh:mm a').format(dateTime);
-  }
-
-  Future<void> _ensureIminServiceReady() async {
-    try {
-      // Try to reinitialize the service to ensure it's pointing to IMIN
-      await printerService.init();
-    } catch (e) {
-      debugPrint("Error reinitializing IMIN service: $e");
-    }
   }
 
   Future<void> _startKOTPrintingThermalOnly(
@@ -247,8 +237,42 @@ class OrderViewViewState extends State<OrderViewView> {
     }
   }
 
-  Future<void> _printBillToIminOnly(BuildContext context) async {
+  Future<void> _checkIfSunmiDevice() async {
     try {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+
+      // Check if manufacturer is SUNMI
+      final isSunmi = androidInfo.manufacturer.toUpperCase().contains('SUNMI');
+
+      setState(() => _isSunmiDevice = isSunmi);
+
+      if (isSunmi) {
+        debugPrint('✅ Running on Sunmi device: ${androidInfo.model}');
+      } else {
+        debugPrint(
+          'ℹ️ Not a Sunmi device: ${androidInfo.manufacturer} ${androidInfo.model}',
+        );
+      }
+    } catch (e) {
+      setState(() => _isSunmiDevice = false);
+      debugPrint('❌ Error checking device: $e');
+    }
+  }
+
+  /// Sunmi printer
+  Future<void> _printBillToSunmi(BuildContext context) async {
+    if (!_isSunmiDevice) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("This device is not a Sunmi printer device"),
+          backgroundColor: redColor,
+        ),
+      );
+      return;
+    }
+    try {
+      if (!context.mounted) return;
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -256,12 +280,12 @@ class OrderViewViewState extends State<OrderViewView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(
-                color: appPrimaryColor,
-              ),
+              CircularProgressIndicator(color: appPrimaryColor),
               SizedBox(height: 16),
-              Text("Printing to IMIN device...",
-                  style: TextStyle(color: whiteColor)),
+              Text(
+                "Printing to Sunmi device...",
+                style: TextStyle(color: whiteColor),
+              ),
             ],
           ),
         ),
@@ -272,27 +296,26 @@ class OrderViewViewState extends State<OrderViewView> {
 
       Uint8List? imageBytes = await captureMonochromeReceipt(normalReceiptKey);
 
-      if (imageBytes != null) {
-        await printerService.init();
-        await printerService.printBitmap(imageBytes);
-        await printerService.fullCut();
-
-        Navigator.of(context).pop();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Bill printed successfully to IMIN device!"),
-            backgroundColor: greenColor,
-          ),
-        );
-      } else {
+      if (imageBytes == null) {
         throw Exception("Image capture failed: normalReceiptKey returned null");
       }
+
+      await SunmiPrinter.printImage(imageBytes);
+      await SunmiPrinter.lineWrap(2);
+      await SunmiPrinter.cutPaper();
+
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Bill printed successfully on Sunmi device!"),
+          backgroundColor: greenColor,
+        ),
+      );
     } catch (e) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("IMIN Print failed: $e"),
+          content: Text("Sunmi print failed: $e"),
           backgroundColor: redColor,
         ),
       );
@@ -460,12 +483,11 @@ class OrderViewViewState extends State<OrderViewView> {
                         onPressed: () async {
                           WidgetsBinding.instance
                               .addPostFrameCallback((_) async {
-                            await _ensureIminServiceReady();
-                            await _printBillToIminOnly(context);
+                            await _printBillToSunmi(context);
                           });
                         },
                         icon: const Icon(Icons.print),
-                        label: const Text("Imin"),
+                        label: const Text("Print(Sunmi)"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: greenColor,
                           foregroundColor: whiteColor,
@@ -511,11 +533,9 @@ class OrderViewViewState extends State<OrderViewView> {
     super.initState();
     // ipController.text = "192.168.1.4";
     if (kIsWeb) {
-      printerService = MockPrinterService();
+      // Mock service for web
     } else if (Platform.isAndroid) {
-      printerService = RealPrinterService();
-    } else {
-      printerService = MockPrinterService();
+      _checkIfSunmiDevice();
     }
     context.read<OrderTodayBloc>().add(StockDetails());
     if (widget.sharedOrderData != null) {
