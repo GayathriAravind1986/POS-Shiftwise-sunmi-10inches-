@@ -51,6 +51,15 @@ class _MyAppState extends State<MyApp> {
             title: 'Ramanas',
             theme: ThemeData(
               primaryColor: appPrimaryColor,
+              tooltipTheme: TooltipThemeData(
+                textStyle: TextStyle(
+                  color: whiteColor, // Change tooltip text color
+                ),
+                decoration: BoxDecoration(
+                  color: appPrimaryColor, // Tooltip background color
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               unselectedWidgetColor: appPrimaryColor,
               fontFamily: "Poppins",
             ),

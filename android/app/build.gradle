@@ -28,7 +28,7 @@ if (keystorePropertiesFile.exists()) {
 }
 android {
     namespace = "com.example.ramana"
-    compileSdkVersion 35
+    compileSdkVersion 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -77,6 +77,8 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar", "*.aar"])
+    implementation "androidx.activity:activity-ktx:1.8.2"
+    implementation "androidx.activity:activity:1.8.2"
 }
 flutter {
     source = "../.."
